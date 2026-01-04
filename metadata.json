@@ -1,0 +1,7 @@
+{
+  "name": "AutoLine Inspector",
+  "description": "A real-time quality control and defect tracking system for automobile assembly lines, connecting final inspectors, zone group leaders, and management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
