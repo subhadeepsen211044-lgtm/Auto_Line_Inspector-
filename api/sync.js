@@ -1,2 +1,5 @@
+import { kv } from '@vercel/kv';
+
 export default async function handler(req, res) {
-  if (req.method === 'POST')
+  try {
+    if (req.method ===
