@@ -1,4 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
+
+
+const syncToCloud = async (updatedDefects: Defect[], tspr: TsprEntry[]) => {
+  if (!cloudUrl) return;
+
+  try {
+    // 1️⃣ Fetch latest from server
+    const latestRes = await fetch(cloudUrl);
+    const latest = await latestRes.json();
+
+    const serverDefects: Defect[] = latest.data || [];
+
+    // 2️⃣ Merge (local wins on conflict)
+    const map: Record<string, Defect> = {};
+    serverDefects.forEach(d => (map[d.id] = d));
+    updatedDefects.forEach(d => (map[d.id] = d));
+
+    const merged = Object.values(map);
+
+    // 3️⃣ POST merged data
+    await fetch(cloudUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ defects: merged, tspr })
+    });
+  } catch (err) {
+    console.error("Cloud sync failed:", err);
+  }
+};
+
 import { 
   Plus, 
   Camera, 
