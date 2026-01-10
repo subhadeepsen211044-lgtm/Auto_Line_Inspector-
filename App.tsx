@@ -1521,7 +1521,11 @@ const App: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
          {session.role === 'INSPECTOR' && (
-            <InspectorView defects={defects} onAddDefect={d => setDefects([d, ...defects])} />
+            <InspectorView defects={defects} onAddDefect={d => {
+            const updated = [d, ...defects];
+            setDefects(updated);
+            syncToCloud(updated, tsprData);
+          }} />
          )}
 
          {session.role === 'GROUP_LEADER' && session.zoneId && (
