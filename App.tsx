@@ -772,37 +772,36 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defects)); }, [defects]);
   useEffect(() => { localStorage.setItem(TSPR_STORAGE_KEY, JSON.stringify(tsprData)); }, [tsprData]);
 
-  // --- RELEVANT FIX: Auto Polling Heartbeat ---
+  // --- AUTOMATIC REFRESH HEARTBEAT (Every 15s) ---
   useEffect(() => {
     if (!cloudUrl) return;
-    loadInitialData(); // Initial load
+    loadInitialData(); 
+    
     const interval = setInterval(() => {
-      handleRefresh(); // Check for updates from other users every 15 seconds
+      handleRefresh(); 
     }, 15000);
+
     return () => clearInterval(interval);
   }, [cloudUrl]);
 
-  // --- RELEVANT FIX: Robust Sync (Merge then Push) ---
+  // --- ROBUST SYNC LOGIC (Merged Push) ---
   const robustSync = async (updatedDefects: Defect[], updatedTspr: TsprEntry[]) => {
     if (!cloudUrl) return;
     setIsSyncing(true);
     try {
-      // 1. Get current cloud state
       const response = await fetch(cloudUrl);
       const cloudJson = await response.json();
       const serverDefects: Defect[] = cloudJson.data || [];
 
-      // 2. Merge logic: Create a map of IDs. Local changes for an ID overwrite cloud entries.
+      // Merge: Local IDs overwrite cloud matches, missing IDs from cloud are added
       const map: Record<string, Defect> = {};
       serverDefects.forEach(d => (map[d.id] = d));
       updatedDefects.forEach(d => (map[d.id] = d));
       const mergedDefects = Object.values(map);
 
-      // 3. Update UI and Storage
       setDefects(mergedDefects);
       setTsprData(updatedTspr);
 
-      // 4. Push merged state back to cloud
       await fetch(cloudUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -825,9 +824,8 @@ const App: React.FC = () => {
            if (json.data) setDefects(json.data);
            if (json.tspr) setTsprData(json.tspr);
         }
-    } catch (e) {
-        console.error("Failed to load data", e);
-    } finally { setIsSyncing(false); }
+    } catch (e) { console.error("Load failed", e); }
+    finally { setIsSyncing(false); }
   };
 
   const handleRefresh = async () => {
@@ -894,7 +892,7 @@ const App: React.FC = () => {
              <div className="flex flex-col"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Live Environment</span><span className="text-sm font-black text-slate-800 tracking-tight">{ROLE_CONFIG[session.role].title} {session.zoneId ? `• Zone ${session.zoneId}` : ''}</span></div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleRefresh} disabled={isSyncing} className="p-3 rounded-2xl bg-white text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm relative group border border-slate-100"><RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} /></button>
+            <button onClick={handleRefresh} disabled={isSyncing} className="p-3 rounded-2xl bg-white text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm border border-slate-100"><RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} /></button>
             <button onClick={() => setShowSettings(true)} className="p-3 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"><Settings size={20} /></button>
             <div className="w-px h-8 bg-slate-200 mx-2" />
             <button onClick={handleLogout} className="p-3 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><LogOut size={20} /></button>
